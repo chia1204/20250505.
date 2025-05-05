@@ -9,6 +9,7 @@ let circleY = 240;
 let circleSize = 100; // 圓的寬高
 let isDragging = false;
 let trail = []; // 儲存圓的軌跡
+let trailColor = [0, 255, 0]; // 預設為綠色 (左手)
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -36,7 +37,7 @@ function draw() {
   image(video, 0, 0);
 
   // 繪製軌跡
-  stroke(255, 0, 0); // 紅色線條
+  stroke(trailColor[0], trailColor[1], trailColor[2]); // 動態設定線條顏色
   strokeWeight(2);
   noFill();
   beginShape();
@@ -54,18 +55,25 @@ function draw() {
   if (hands.length > 0) {
     for (let hand of hands) {
       if (hand.confidence > 0.1) {
-        // 檢查食指 (keypoints[8])
-        let indexFinger = hand.keypoints[8];
-        let d = dist(indexFinger.x, indexFinger.y, circleX, circleY);
+        // 檢查大拇指 (keypoints[4])
+        let thumb = hand.keypoints[4];
+        let d = dist(thumb.x, thumb.y, circleX, circleY);
 
-        // 如果食指接觸到圓，讓圓跟隨食指移動
+        // 如果大拇指接觸到圓，讓圓跟隨大拇指移動
         if (d < circleSize / 2) {
           isDragging = true;
+
+          // 根據左右手設定軌跡顏色
+          if (hand.handedness === "Left") {
+            trailColor = [0, 255, 0]; // 綠色 (左手)
+          } else if (hand.handedness === "Right") {
+            trailColor = [255, 0, 0]; // 紅色 (右手)
+          }
         }
 
         if (isDragging) {
-          circleX = indexFinger.x;
-          circleY = indexFinger.y;
+          circleX = thumb.x;
+          circleY = thumb.y;
 
           // 儲存圓的位置到軌跡
           trail.push({ x: circleX, y: circleY });
@@ -76,10 +84,10 @@ function draw() {
           let keypoint = hand.keypoints[i];
 
           // 根據左右手進行顏色區分
-          if (hand.handedness == "Left") {
-            fill(255, 0, 255);
+          if (hand.handedness === "Left") {
+            fill(0, 255, 0); // 綠色 (左手)
           } else {
-            fill(255, 255, 0);
+            fill(255, 0, 0); // 紅色 (右手)
           }
 
           noStroke();
