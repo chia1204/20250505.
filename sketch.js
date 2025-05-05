@@ -3,7 +3,9 @@
 
 let video;
 let handPose;
+let poseNet;
 let hands = [];
+let pose;
 let circleX = 320; // 圓的初始位置 (視窗中間)
 let circleY = 240;
 let circleSize = 100; // 圓的寬高
@@ -16,14 +18,6 @@ function preload() {
   handPose = ml5.handPose({ flipped: true });
 }
 
-function mousePressed() {
-  console.log(hands);
-}
-
-function gotHands(results) {
-  hands = results;
-}
-
 function setup() {
   createCanvas(640, 480);
   video = createCapture(VIDEO, { flipped: true });
@@ -31,9 +25,27 @@ function setup() {
 
   // Start detecting hands
   handPose.detectStart(video, gotHands);
+
+  // Initialize PoseNet
+  poseNet = ml5.poseNet(video, () => {
+    console.log("PoseNet model loaded");
+  });
+  poseNet.on("pose", (results) => {
+    if (results.length > 0) {
+      pose = results[0].pose;
+    }
+  });
+}
+
+function gotHands(results) {
+  hands = results;
 }
 
 function draw() {
+  // 反轉攝影機影像
+  translate(video.width, 0); // 平移畫布
+  scale(-1, 1); // 水平翻轉
+
   image(video, 0, 0);
 
   // 繪製軌跡
@@ -101,5 +113,23 @@ function draw() {
   if (hands.length === 0) {
     isDragging = false;
     trail = [];
+  }
+
+  // 使用 PoseNet 繪製鼻子和手腕的圓
+  if (pose) {
+    let eyeR = pose.rightEye; // 抓到右眼資訊
+    let eyeL = pose.leftEye;  // 抓到左眼資訊
+    let d = dist(eyeR.x, eyeR.y, eyeL.x, eyeL.y); // 計算左右眼的距離作為鼻子圓的直徑
+
+    // 繪製鼻子的圓
+    fill(255, 0, 0);
+    ellipse(pose.nose.x, pose.nose.y, d);
+
+    // 繪製右手腕的圓
+    fill(0, 0, 255);
+    ellipse(pose.rightWrist.x, pose.rightWrist.y, 62);
+
+    // 繪製左手腕的圓
+    ellipse(pose.leftWrist.x, pose.leftWrist.y, 62);
   }
 }
