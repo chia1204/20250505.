@@ -8,6 +8,7 @@ let circleX = 320; // 圓的初始位置 (視窗中間)
 let circleY = 240;
 let circleSize = 100; // 圓的寬高
 let isDragging = false;
+let trail = []; // 儲存圓的軌跡
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -34,6 +35,16 @@ function setup() {
 function draw() {
   image(video, 0, 0);
 
+  // 繪製軌跡
+  stroke(255, 0, 0); // 紅色線條
+  strokeWeight(2);
+  noFill();
+  beginShape();
+  for (let pos of trail) {
+    vertex(pos.x, pos.y);
+  }
+  endShape();
+
   // 繪製圓
   fill(0, 255, 0);
   noStroke();
@@ -55,6 +66,9 @@ function draw() {
         if (isDragging) {
           circleX = indexFinger.x;
           circleY = indexFinger.y;
+
+          // 儲存圓的位置到軌跡
+          trail.push({ x: circleX, y: circleY });
         }
 
         // 繪製手部關鍵點
@@ -75,8 +89,9 @@ function draw() {
     }
   }
 
-  // 如果手指離開圓，停止拖動
+  // 如果手指離開圓，停止拖動並清空軌跡
   if (hands.length === 0) {
     isDragging = false;
+    trail = [];
   }
 }
