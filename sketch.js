@@ -4,6 +4,10 @@
 let video;
 let handPose;
 let hands = [];
+let circleX = 320; // 圓的初始位置 (視窗中間)
+let circleY = 240;
+let circleSize = 100; // 圓的寬高
+let isDragging = false;
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -30,15 +34,34 @@ function setup() {
 function draw() {
   image(video, 0, 0);
 
-  // Ensure at least one hand is detected
+  // 繪製圓
+  fill(0, 255, 0);
+  noStroke();
+  circle(circleX, circleY, circleSize);
+
+  // 確保至少檢測到一隻手
   if (hands.length > 0) {
     for (let hand of hands) {
       if (hand.confidence > 0.1) {
-        // Loop through keypoints and draw circles
+        // 檢查食指 (keypoints[8])
+        let indexFinger = hand.keypoints[8];
+        let d = dist(indexFinger.x, indexFinger.y, circleX, circleY);
+
+        // 如果食指接觸到圓，讓圓跟隨食指移動
+        if (d < circleSize / 2) {
+          isDragging = true;
+        }
+
+        if (isDragging) {
+          circleX = indexFinger.x;
+          circleY = indexFinger.y;
+        }
+
+        // 繪製手部關鍵點
         for (let i = 0; i < hand.keypoints.length; i++) {
           let keypoint = hand.keypoints[i];
 
-          // Color-code based on left or right hand
+          // 根據左右手進行顏色區分
           if (hand.handedness == "Left") {
             fill(255, 0, 255);
           } else {
@@ -50,5 +73,10 @@ function draw() {
         }
       }
     }
+  }
+
+  // 如果手指離開圓，停止拖動
+  if (hands.length === 0) {
+    isDragging = false;
   }
 }
